@@ -9,7 +9,9 @@ namespace ParsingNumbers.Parsers;
 public class SimdParser
 {
     private static readonly Vector128<byte> Zeros = Vector128.Create((byte)'0');
-    private static readonly Vector128<sbyte> Mul10 = Vector128.Create((sbyte)10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1);
+    private static readonly Vector128<sbyte> Mul10 = Vector128.Create(10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1);
+    private static readonly Vector128<short> Mul100 = Vector128.Create(100, 1, 100, 1, 100, 1, 100, 1);
+    private static readonly Vector128<short> Mul10000 = Vector128.Create(10000, 1, 10000, 1, 10000, 1, 10000, 1);
     private static readonly Vector128<sbyte> ZerosAsSByte = Vector128.Create((byte)'0').AsSByte();
     private static readonly Vector128<sbyte> AfterNinesAsSByte = Vector128.Create((byte)((byte)'9' + 1)).AsSByte();
     private readonly Dictionary<int, Block> _blocks = new();
@@ -77,7 +79,7 @@ public class SimdParser
                 ParseTwoDigitNumbers(shuffled, block.Amount, output);
                 break;
             case 4:
-                ParseFourDigitNumbers(shuffled, block.Amount);
+                ParseFourDigitNumbers(shuffled, block.Amount, output);
                 break;
             case 8:
                 ParseEightDigitNumbers(shuffled, block.Amount);
@@ -96,7 +98,7 @@ public class SimdParser
 
     private static unsafe void ParseOneDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
-        var t0 = Sse2.Subtract(vector, Zeros);
+        var t0 = Sse2.SubtractSaturate(vector, Zeros);
         for (var i = 0; i < amount; i++)
         {
             output[i] = t0.GetElement(i);
@@ -105,7 +107,7 @@ public class SimdParser
 
     private static unsafe void ParseTwoDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
-        var t0 = Sse2.Subtract(vector, Zeros);
+        var t0 = Sse2.SubtractSaturate(vector, Zeros);
         var t1 = Ssse3.MultiplyAddAdjacent(t0, Mul10);
         for (var i = 0; i < amount; i++)
         {
@@ -113,19 +115,15 @@ public class SimdParser
         }
     }
 
-    private static uint[] ParseFourDigitNumbers(Vector128<byte> vector, int amount)
+    private static unsafe void ParseFourDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
-        var numbers = new uint[amount];
-        for (var i = 0; i < numbers.Length; i++)
+        var t0 = Sse2.SubtractSaturate(vector, Zeros);
+        var t1 = Ssse3.MultiplyAddAdjacent(t0, Mul10);
+        var t2 = Sse2.MultiplyAddAdjacent(t1, Mul100);
+        for (var i = 0; i < amount; i++)
         {
-            numbers[i] =
-                1000 * GetElement(vector, i * 4) +
-                100 * GetElement(vector, i * 4 + 1) +
-                10 * GetElement(vector, i * 4 + 2) +
-                GetElement(vector, i * 4 + 3);
+            output[i] = (uint)t2.GetElement(i);
         }
-
-        return numbers;
     }
 
     private static uint[] ParseEightDigitNumbers(Vector128<byte> vector, int amount)

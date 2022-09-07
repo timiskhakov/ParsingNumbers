@@ -27,6 +27,16 @@ public class SimdParserTests
     }
 
     [Fact]
+    public void Parse_4DigitNumbers()
+    {
+        var parser = new SimdParser();
+
+        var result = parser.Parse("1234,5678,9010,1230");
+
+        Assert.Equal(new uint[] { 1234, 5678, 9010, 1230 }, result);
+    }
+
+    [Fact]
     public void Parse_LongInput()
     {
         var parser = new SimdParser();
