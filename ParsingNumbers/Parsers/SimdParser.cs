@@ -8,6 +8,7 @@ namespace ParsingNumbers.Parsers;
 
 public class SimdParser
 {
+    private static readonly Vector128<byte> Zeros = Vector128.Create((byte)'0');
     private static readonly Vector128<sbyte> ZerosAsSByte = Vector128.Create((byte)'0').AsSByte();
     private static readonly Vector128<sbyte> AfterNinesAsSByte = Vector128.Create((byte)((byte)'9' + 1)).AsSByte();
     private readonly Dictionary<int, Block> _blocks = new();
@@ -31,17 +32,21 @@ public class SimdParser
         var parsed = 0;
         var counter = 0;
         var b = stackalloc byte[16];
+        Span<uint> output = stackalloc uint[8];
         while (counter <= value.Length - 16)
         {
             for (var i = 0; i < 16; i++)
             {
                 b[i] = (byte)value[counter + i];
             }
-            var (chunk, processed) = ParseChunk(b);
+            var processed = ParseChunk(b, output, out var amount);
 
-            chunk.CopyTo(result, parsed);
+            for (var i = 0; i < amount; i++)
+            {
+                result[parsed + i] = output[i];
+            }
 
-            parsed += chunk.Length;
+            parsed += amount;
             counter += processed;
         }
 
@@ -51,7 +56,7 @@ public class SimdParser
         return result;
     }
 
-    private unsafe (uint[], int) ParseChunk(byte* b)
+    private unsafe int ParseChunk(byte* b, Span<uint> output, out int amount)
     {
         var input = Sse3.LoadDquVector128(b);
         var t0 = Sse2.CompareLessThan(input.AsSByte(), ZerosAsSByte);
@@ -62,28 +67,39 @@ public class SimdParser
         var block = _blocks[moveMask];
         var shuffled = Ssse3.Shuffle(input, block.Mask);
 
-        uint[] result = block.NumberSize switch
+        switch(block.NumberSize)
         {
-            1 => ParseOneDigitNumbers(shuffled, block.Amount),
-            2 => ParseTwoDigitNumbers(shuffled, block.Amount),
-            4 => ParseFourDigitNumbers(shuffled, block.Amount),
-            8 => ParseEightDigitNumbers(shuffled, block.Amount),
-            16 => ParseSixteenDigitNumbers(shuffled, block.Amount),
-            _ => throw new ArgumentOutOfRangeException()
-        };
-
-        return (result, block.Processed);
-    }
-
-    private static uint[] ParseOneDigitNumbers(Vector128<byte> vector, int amount)
-    {
-        var result = new uint[amount];
-        for (var i = 0; i < result.Length; i++)
-        {
-            result[i] = GetElement(vector, i);
+            case 1:
+                ParseOneDigitNumbers(shuffled, block.Amount, output);
+                break;
+            case 2:
+                ParseTwoDigitNumbers(shuffled, block.Amount);
+                break;
+            case 4:
+                ParseFourDigitNumbers(shuffled, block.Amount);
+                break;
+            case 8:
+                ParseEightDigitNumbers(shuffled, block.Amount);
+                break;
+            case 16:
+                ParseSixteenDigitNumbers(shuffled, block.Amount);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
 
-        return result;
+        amount = block.Amount;
+
+        return block.Processed;
+    }
+
+    private static unsafe void ParseOneDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
+    {
+        var t0 = Sse2.Subtract(vector, Zeros);
+        for (var i = 0; i < amount; i++)
+        {
+            output[i] = t0.GetElement(i);
+        }
     }
 
     private static uint[] ParseTwoDigitNumbers(Vector128<byte> vector, int amount)
