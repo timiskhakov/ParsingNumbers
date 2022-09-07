@@ -7,13 +7,23 @@ namespace ParsingNumbers.Tests;
 public class SimdParserTests
 {
     [Fact]
-    public void Parse_ShortInput()
+    public void Parse_1DigitNumbers()
     {
         var parser = new SimdParser();
 
-        var actual = parser.Parse(Data.ShortInput);
+        var result = parser.Parse("1,2,3,4,5,6,7,8,9");
 
-        Assert.Equal(Data.ShortExpected, actual);
+        Assert.Equal(new uint[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, result);
+    }
+
+    [Fact]
+    public void Parse_2DigitNumbers()
+    {
+        var parser = new SimdParser();
+
+        var result = parser.Parse("12,34,56,78,90,10");
+
+        Assert.Equal(new uint[] { 12, 34, 56, 78, 90, 10 }, result);
     }
 
     [Fact]
