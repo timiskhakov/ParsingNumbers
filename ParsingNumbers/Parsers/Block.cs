@@ -3,7 +3,6 @@ using System.Collections;
 using System;
 using System.Linq;
 using System.Runtime.Intrinsics;
-using CommandLine;
 
 namespace ParsingNumbers.Parsers;
 

@@ -10,7 +10,7 @@ public class SimdParser
 {
     private static readonly Vector128<sbyte> ZerosAsSByte = Vector128.Create((byte)'0').AsSByte();
     private static readonly Vector128<sbyte> AfterNinesAsSByte = Vector128.Create((byte)((byte)'9' + 1)).AsSByte();
-    private readonly Dictionary<int, Block> masks = new();
+    private readonly Dictionary<int, Block> _blocks = new();
 
     private readonly SpanParser _spanParser = new();
 
@@ -18,7 +18,7 @@ public class SimdParser
     {
         for (ushort i = 0; i < ushort.MaxValue; i++)
         {
-            masks.Add(i, new Block(i));
+            _blocks.Add(i, new Block(i));
         }
     }
 
@@ -46,7 +46,7 @@ public class SimdParser
         }
 
         var spanParsed = _spanParser.Parse(value[counter..]);
-        spanParsed.CopyTo(result, parsed++);
+        spanParsed.CopyTo(result, parsed);
 
         return result;
     }
@@ -59,7 +59,7 @@ public class SimdParser
         var andNot = Sse2.AndNot(t0, t1);
         var moveMask = (ushort)Sse2.MoveMask(andNot);
 
-        var block = masks[moveMask];
+        var block = _blocks[moveMask];
         var shuffled = Ssse3.Shuffle(input, block.Mask);
 
         uint[] result = block.NumberSize switch
