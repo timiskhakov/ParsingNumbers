@@ -82,7 +82,7 @@ public class SimdParser
                 ParseFourDigitNumbers(shuffled, block.Amount, output);
                 break;
             case 8:
-                ParseEightDigitNumbers(shuffled, block.Amount);
+                ParseEightDigitNumbers(shuffled, block.Amount, output);
                 break;
             case 16:
                 ParseSixteenDigitNumbers(shuffled, block.Amount);
@@ -126,23 +126,17 @@ public class SimdParser
         }
     }
 
-    private static uint[] ParseEightDigitNumbers(Vector128<byte> vector, int amount)
+    private static unsafe void ParseEightDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
-        var numbers = new uint[amount];
-        for (var i = 0; i < numbers.Length; i++)
+        var t0 = Sse2.SubtractSaturate(vector, Zeros);
+        var t1 = Ssse3.MultiplyAddAdjacent(t0, Mul10);
+        var t2 = Sse2.MultiplyAddAdjacent(t1, Mul100);
+        var t3 = Sse41.PackUnsignedSaturate(t2, t2);
+        var t4 = Sse2.MultiplyAddAdjacent(t3.AsInt16(), Mul10000);
+        for (var i = 0; i < amount; i++)
         {
-            numbers[i] =
-                10000000 * GetElement(vector, i * 8) +
-                1000000 * GetElement(vector, i * 8 + 1) +
-                100000 * GetElement(vector, i * 8 + 2) +
-                10000 * GetElement(vector, i * 8 + 3) +
-                1000 * GetElement(vector, i * 8 + 4) +
-                100 * GetElement(vector, i * 8 + 5) +
-                10 * GetElement(vector, i * 8 + 6) +
-                GetElement(vector, i * 8 + 7);
+            output[i] = (uint)t4.GetElement(i);
         }
-
-        return numbers;
     }
 
     private static uint[] ParseSixteenDigitNumbers(Vector128<byte> vector, int amount)

@@ -37,6 +37,16 @@ public class SimdParserTests
     }
 
     [Fact]
+    public void Parse_8DigitNumbers()
+    {
+        var parser = new SimdParser();
+
+        var result = parser.Parse("12345678,90101230,12345678,90101230");
+
+        Assert.Equal(new uint[] { 12345678, 90101230, 12345678, 90101230 }, result);
+    }
+
+    [Fact]
     public void Parse_LongInput()
     {
         var parser = new SimdParser();
