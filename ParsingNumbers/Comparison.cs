@@ -14,11 +14,11 @@ public class Comparison
 
     public static IEnumerable<string> Inputs() => new[]
     {
-        "123456789",
-        "123456789,987654321",
-        CreateInput(100),
-        CreateInput(10000),
+        //"123456789",
+        //"123456789,987654321",
+        //CreateInput(100),
         CreateInput(1000000),
+        //CreateInput(1000000),
     };
 
     private static string CreateInput(int n)
@@ -40,7 +40,7 @@ public class Comparison
         _simdParser = new SimdParser();
     }
 
-    [Benchmark(Baseline = true)]
+    //[Benchmark(Baseline = true)]
     [ArgumentsSource(nameof(Inputs))]
     public void Naive(string value)
     {

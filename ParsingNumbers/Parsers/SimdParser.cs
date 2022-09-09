@@ -8,6 +8,9 @@ namespace ParsingNumbers.Parsers;
 
 public class SimdParser
 {
+    private static readonly Vector128<byte> RawMask = Vector128.Create(
+        0, 2, 4, 6, 8, 10, 12, 14,
+        0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80);
     private static readonly Vector128<byte> Zeros = Vector128.Create((byte)'0');
     private static readonly Vector128<sbyte> Mul10 = Vector128.Create(10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1);
     private static readonly Vector128<short> Mul100 = Vector128.Create(100, 1, 100, 1, 100, 1, 100, 1);
@@ -33,23 +36,20 @@ public class SimdParser
 
         var parsed = 0;
         var counter = 0;
-        var b = stackalloc byte[16];
-        Span<uint> output = stackalloc uint[8];
-        while (counter <= value.Length - 16)
+        fixed (char* c = value)
         {
-            for (var i = 0; i < 16; i++)
+            Span<uint> output = stackalloc uint[8];
+            while (counter <= value.Length - 16)
             {
-                b[i] = (byte)value[counter + i];
-            }
-            var processed = ParseChunk(b, output, out var amount);
+                var processed = ParseChunk(c + counter, output, out var amount);
+                for (var i = 0; i < amount; i++)
+                {
+                    result[parsed + i] = output[i];
+                }
 
-            for (var i = 0; i < amount; i++)
-            {
-                result[parsed + i] = output[i];
+                parsed += amount;
+                counter += processed;
             }
-
-            parsed += amount;
-            counter += processed;
         }
 
         var spanParsed = _spanParser.Parse(value[counter..]);
@@ -58,9 +58,13 @@ public class SimdParser
         return result;
     }
 
-    private unsafe int ParseChunk(byte* b, Span<uint> output, out int amount)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe int ParseChunk(char* c, Span<uint> output, out int amount)
     {
-        var input = Sse3.LoadDquVector128(b);
+        var raw = Avx.LoadDquVector256((ushort*)c).AsByte();
+        var lower = Ssse3.Shuffle(raw.GetLower(), RawMask);
+        var upper = Ssse3.Shuffle(raw.GetUpper(), RawMask);
+        var input = Vector128.Create(lower.GetLower(), upper.GetLower());
         var t0 = Sse2.CompareLessThan(input.AsSByte(), ZerosAsSByte);
         var t1 = Sse2.CompareLessThan(input.AsSByte(), AfterNinesAsSByte);
         var andNot = Sse2.AndNot(t0, t1);
@@ -92,6 +96,7 @@ public class SimdParser
         return block.Processed;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ParseOneDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
@@ -101,6 +106,7 @@ public class SimdParser
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ParseTwoDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
@@ -111,6 +117,7 @@ public class SimdParser
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ParseFourDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
@@ -122,6 +129,7 @@ public class SimdParser
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ParseEightDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
@@ -140,14 +148,18 @@ public class SimdParser
         var result = 0;
 
         var i = 0;
-        fixed (char* p = value)
+        fixed (char* c = value)
         {
-            var comma = Vector256.Create(',');
+            var comma = Vector128.Create((byte)',');
             for (; i < value.Length - Vector256<ushort>.Count; i += Vector256<ushort>.Count)
             {
-                var block = Avx.LoadVector256((ushort*)p + i);
-                var match = Avx2.CompareEqual(comma, block);
-                var mask = RemoveOddBits(Avx2.MoveMask(match.AsByte()));
+                var raw = Avx.LoadDquVector256((ushort*)c + i).AsByte();
+                var lower = Ssse3.Shuffle(raw.GetLower(), RawMask);
+                var upper = Ssse3.Shuffle(raw.GetUpper(), RawMask);
+                var input = Vector128.Create(lower.GetLower(), upper.GetLower());
+
+                var match = Sse2.CompareEqual(comma, input);
+                var mask = Sse2.MoveMask(match.AsByte());
                 result += (int)Popcnt.PopCount((uint)mask);
             }
         }
@@ -158,15 +170,5 @@ public class SimdParser
         }
 
         return result;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int RemoveOddBits(int n)
-    {
-        n = ((n & 0x44444444) >> 1) | (n & 0x11111111);
-        n = ((n & 0x30303030) >> 2) | (n & 0x03030303);
-        n = ((n & 0x0F000F00) >> 4) | (n & 0x000F000F);
-        n = ((n & 0x00FF0000) >> 8) | (n & 0x000000FF);
-        return n;
     }
 }
