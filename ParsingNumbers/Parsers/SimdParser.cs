@@ -15,7 +15,6 @@ public class SimdParser
     private static readonly Vector128<sbyte> ZerosAsSByte = Vector128.Create((byte)'0').AsSByte();
     private static readonly Vector128<sbyte> AfterNinesAsSByte = Vector128.Create((byte)((byte)'9' + 1)).AsSByte();
     private readonly Dictionary<int, Block> _blocks = new();
-
     private readonly SpanParser _spanParser = new();
 
     public SimdParser()
@@ -84,9 +83,6 @@ public class SimdParser
             case 8:
                 ParseEightDigitNumbers(shuffled, block.Amount, output);
                 break;
-            case 16:
-                ParseSixteenDigitNumbers(shuffled, block.Amount);
-                break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -96,7 +92,7 @@ public class SimdParser
         return block.Processed;
     }
 
-    private static unsafe void ParseOneDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
+    private static void ParseOneDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
         for (var i = 0; i < amount; i++)
@@ -105,7 +101,7 @@ public class SimdParser
         }
     }
 
-    private static unsafe void ParseTwoDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
+    private static void ParseTwoDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
         var t1 = Ssse3.MultiplyAddAdjacent(t0, Mul10);
@@ -115,7 +111,7 @@ public class SimdParser
         }
     }
 
-    private static unsafe void ParseFourDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
+    private static void ParseFourDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
         var t1 = Ssse3.MultiplyAddAdjacent(t0, Mul10);
@@ -126,7 +122,7 @@ public class SimdParser
         }
     }
 
-    private static unsafe void ParseEightDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
+    private static void ParseEightDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
         var t1 = Ssse3.MultiplyAddAdjacent(t0, Mul10);
@@ -137,33 +133,6 @@ public class SimdParser
         {
             output[i] = (uint)t4.GetElement(i);
         }
-    }
-
-    private static uint[] ParseSixteenDigitNumbers(Vector128<byte> vector, int amount)
-    {
-        var numbers = new uint[amount];
-        for (var i = 0; i < numbers.Length; i++)
-        {
-            numbers[i] =
-                1000000000 * GetElement(vector, i * 10 + 6) +
-                100000000 * GetElement(vector, i * 10 + 7) +
-                10000000 * GetElement(vector, i * 10 + 8) +
-                1000000 * GetElement(vector, i * 10 + 9) +
-                100000 * GetElement(vector, i * 10 + 10) +
-                10000 * GetElement(vector, i * 10 + 11) +
-                1000 * GetElement(vector, i * 10 + 12) +
-                100 * GetElement(vector, i * 10 + 13) +
-                10 * GetElement(vector, i * 10 + 14) +
-                GetElement(vector, i * 10 + 15);
-        }
-
-        return numbers;
-    }
-
-    private static uint GetElement(Vector128<byte> vector, int position)
-    {
-        var element = vector.GetElement(position);
-        return (uint) (element > 0 ? element - (byte)'0' : 0);
     }
 
     private static unsafe int CountCommas(string value)
