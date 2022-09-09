@@ -11,6 +11,7 @@ public class SimdParser
     private static readonly Vector128<byte> RawMask = Vector128.Create(
         0, 2, 4, 6, 8, 10, 12, 14,
         0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80);
+    private static readonly Vector128<byte> Commas = Vector128.Create((byte)',');
     private static readonly Vector128<byte> Zeros = Vector128.Create((byte)'0');
     private static readonly Vector128<sbyte> Mul10 = Vector128.Create(10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1);
     private static readonly Vector128<short> Mul100 = Vector128.Create(100, 1, 100, 1, 100, 1, 100, 1);
@@ -65,7 +66,6 @@ public class SimdParser
         var t1 = Sse2.CompareLessThan(input.AsSByte(), AfterNinesAsSByte);
         var andNot = Sse2.AndNot(t0, t1);
         var moveMask = Sse2.MoveMask(andNot);
-
         var block = _blocks[moveMask];
         var shuffled = Ssse3.Shuffle(input, block.Mask);
 
@@ -154,11 +154,10 @@ public class SimdParser
         var i = 0;
         fixed (char* c = value)
         {
-            var comma = Vector128.Create((byte)',');
             for (; i < value.Length - Vector256<ushort>.Count; i += Vector256<ushort>.Count)
             {
                 var input = LoadInput(c + i);
-                var match = Sse2.CompareEqual(comma, input);
+                var match = Sse2.CompareEqual(Commas, input);
                 var mask = Sse2.MoveMask(match);
                 result += Popcnt.PopCount((uint)mask);
             }
