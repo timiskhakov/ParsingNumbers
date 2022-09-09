@@ -58,12 +58,13 @@ public class SimdParser
         return result;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int ParseChunk(Vector128<byte> input, Span<uint> output, out int amount)
     {
         var t0 = Sse2.CompareLessThan(input.AsSByte(), ZerosAsSByte);
         var t1 = Sse2.CompareLessThan(input.AsSByte(), AfterNinesAsSByte);
         var andNot = Sse2.AndNot(t0, t1);
-        var moveMask = (ushort)Sse2.MoveMask(andNot);
+        var moveMask = Sse2.MoveMask(andNot);
 
         var block = _blocks[moveMask];
         var shuffled = Ssse3.Shuffle(input, block.Mask);
@@ -108,7 +109,7 @@ public class SimdParser
         var t1 = Ssse3.MultiplyAddAdjacent(t0, Mul10);
         for (var i = 0; i < amount; i++)
         {
-            output[i] = (uint) t1.GetElement(i);
+            output[i] = (uint)t1.GetElement(i);
         }
     }
 
