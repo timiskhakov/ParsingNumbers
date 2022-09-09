@@ -33,7 +33,6 @@ public class SimdParser
         if (string.IsNullOrEmpty(value)) return Array.Empty<uint>();
 
         var result = new uint[CountCommas(value) + 1];
-
         var parsed = 0;
         var counter = 0;
         fixed (char* c = value)
@@ -41,7 +40,8 @@ public class SimdParser
             Span<uint> output = stackalloc uint[8];
             while (counter <= value.Length - 16)
             {
-                var processed = ParseChunk(c + counter, output, out var amount);
+                var input = LoadInput(c + counter);
+                var processed = ParseChunk(input, output, out var amount);
                 for (var i = 0; i < amount; i++)
                 {
                     result[parsed + i] = output[i];
@@ -58,13 +58,8 @@ public class SimdParser
         return result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private unsafe int ParseChunk(char* c, Span<uint> output, out int amount)
+    private int ParseChunk(Vector128<byte> input, Span<uint> output, out int amount)
     {
-        var raw = Avx.LoadDquVector256((ushort*)c).AsByte();
-        var lower = Ssse3.Shuffle(raw.GetLower(), RawMask);
-        var upper = Ssse3.Shuffle(raw.GetUpper(), RawMask);
-        var input = Vector128.Create(lower.GetLower(), upper.GetLower());
         var t0 = Sse2.CompareLessThan(input.AsSByte(), ZerosAsSByte);
         var t1 = Sse2.CompareLessThan(input.AsSByte(), AfterNinesAsSByte);
         var andNot = Sse2.AndNot(t0, t1);
@@ -143,24 +138,28 @@ public class SimdParser
         }
     }
 
-    private static unsafe int CountCommas(string value)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe Vector128<byte> LoadInput(char* c)
     {
-        var result = 0;
+        var raw = Avx.LoadDquVector256((ushort*)c).AsByte();
+        var lower = Ssse3.Shuffle(raw.GetLower(), RawMask);
+        var upper = Ssse3.Shuffle(raw.GetUpper(), RawMask);
+        return Vector128.Create(lower.GetLower(), upper.GetLower());
+    }
 
+    private static unsafe uint CountCommas(string value)
+    {
+        uint result = 0;
         var i = 0;
         fixed (char* c = value)
         {
             var comma = Vector128.Create((byte)',');
             for (; i < value.Length - Vector256<ushort>.Count; i += Vector256<ushort>.Count)
             {
-                var raw = Avx.LoadDquVector256((ushort*)c + i).AsByte();
-                var lower = Ssse3.Shuffle(raw.GetLower(), RawMask);
-                var upper = Ssse3.Shuffle(raw.GetUpper(), RawMask);
-                var input = Vector128.Create(lower.GetLower(), upper.GetLower());
-
+                var input = LoadInput(c + i);
                 var match = Sse2.CompareEqual(comma, input);
-                var mask = Sse2.MoveMask(match.AsByte());
-                result += (int)Popcnt.PopCount((uint)mask);
+                var mask = Sse2.MoveMask(match);
+                result += Popcnt.PopCount((uint)mask);
             }
         }
 
