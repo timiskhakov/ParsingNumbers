@@ -57,7 +57,17 @@ public class SimdParserTests
     }
 
     [Fact]
-    public void Parse_TenDigitsNumber()
+    public void Parse_NineDigitsNumbers()
+    {
+        var parser = new SimdParser();
+
+        var actual = parser.Parse("123456789,123456789");
+
+        Assert.Equal(new uint[] { 123456789, 123456789 }, actual);
+    }
+
+    [Fact]
+    public void Parse_TenDigitsNumbers()
     {
         var parser = new SimdParser();
 

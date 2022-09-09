@@ -83,6 +83,9 @@ public class SimdParser
             case 8:
                 ParseEightDigitNumbers(shuffled, block.Amount, output);
                 break;
+            case 16:
+                ParseSingeNumber(shuffled, output);
+                break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -137,6 +140,25 @@ public class SimdParser
         {
             output[i] = (uint)t4.GetElement(i);
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ParseSingeNumber(Vector128<byte> vector, Span<uint> output)
+    {
+        Span<char> chars = stackalloc char[16];
+        for (var i = 0; i < chars.Length; i++)
+        {
+            chars[i] = (char) vector.GetElement(i);
+        }
+        
+        var start = 0;
+        for (var i = 0; i < chars.Length; i++)
+        {
+            if (chars[i] > '0' - 1) break;
+            start++;
+        }
+        
+        output[0] = uint.Parse(chars[start..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
