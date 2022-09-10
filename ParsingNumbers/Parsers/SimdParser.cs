@@ -146,16 +146,12 @@ public class SimdParser
     private static void ParseSingeNumber(Vector128<byte> vector, Span<uint> output)
     {
         Span<char> chars = stackalloc char[16];
-        for (var i = 0; i < chars.Length; i++)
-        {
-            chars[i] = (char) vector.GetElement(i);
-        }
-        
         var start = 0;
         for (var i = 0; i < chars.Length; i++)
         {
-            if (chars[i] > '0' - 1) break;
-            start++;
+            var element = vector.GetElement(i);
+            chars[i] = (char)element;
+            if (element == 0) start++;
         }
         
         output[0] = uint.Parse(chars[start..]);
