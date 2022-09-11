@@ -34,33 +34,33 @@ public class SimdParser
         if (string.IsNullOrEmpty(value)) return Array.Empty<uint>();
 
         var result = new uint[CountCommas(value) + 1];
-        var parsed = 0;
-        var counter = 0;
+        var processed = 0;
+        var amount = 0;
         fixed (char* c = value)
         {
             Span<uint> output = stackalloc uint[8];
-            while (counter <= value.Length - 16)
+            while (processed <= value.Length - 16)
             {
-                var input = LoadInput(c + counter);
-                var processed = ParseChunk(input, output, out var amount);
-                for (var i = 0; i < amount; i++)
+                var input = LoadInput(c + processed);
+                var (p, a) = ParseChunk(input, output);
+                for (var i = 0; i < a; i++)
                 {
-                    result[parsed + i] = output[i];
+                    result[amount + i] = output[i];
                 }
-
-                parsed += amount;
-                counter += processed;
+                
+                processed += p;
+                amount += a;
             }
         }
 
-        var spanParsed = _spanParser.Parse(value[counter..]);
-        spanParsed.CopyTo(result, parsed);
+        var spanParsed = _spanParser.Parse(value[processed..]);
+        spanParsed.CopyTo(result, amount);
 
         return result;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int ParseChunk(Vector128<byte> input, Span<uint> output, out int amount)
+    private (int, int) ParseChunk(Vector128<byte> input, Span<uint> output)
     {
         var t0 = Sse2.CompareLessThan(input.AsSByte(), ZerosAsSByte);
         var t1 = Sse2.CompareLessThan(input.AsSByte(), AfterNinesAsSByte);
@@ -90,9 +90,7 @@ public class SimdParser
                 throw new ArgumentOutOfRangeException();
         }
 
-        amount = block.Amount;
-
-        return block.Processed;
+        return (block.Processed, block.Amount);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
