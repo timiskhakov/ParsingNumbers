@@ -1,6 +1,6 @@
 ﻿namespace ParsingNumbers.Parsers;
 
-public struct Pattern
+public readonly struct Pattern
 {
     public int Start { get; }
     public int Length { get; }
