@@ -42,7 +42,7 @@ public class Block
     {
         var bits = new BitArray(BitConverter.GetBytes(value)).Cast<bool>().ToArray();
 
-        var result = new List<Pattern>();
+        var patterns = new List<Pattern>();
         var start = 0;
         var processed = 0;
         for (var i = 0; i < bits.Length; i++)
@@ -61,13 +61,13 @@ public class Block
 
             if (!bits[i] && bits[i - 1])
             {
-                result.Add(new Pattern(start, i - start));
+                patterns.Add(new Pattern(start, i - start));
             }
 
             if (!bits[i]) processed = i + 1;
         }
 
-        return (result, processed);
+        return (patterns, processed);
     }
 
     private static int CalculateSize(List<Pattern> patterns)

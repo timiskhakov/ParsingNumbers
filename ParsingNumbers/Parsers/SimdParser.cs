@@ -18,6 +18,7 @@ public class SimdParser
     private static readonly Vector128<short> Mul10000 = Vector128.Create(10000, 1, 10000, 1, 10000, 1, 10000, 1);
     private static readonly Vector128<sbyte> ZerosAsSByte = Vector128.Create((byte)'0').AsSByte();
     private static readonly Vector128<sbyte> AfterNinesAsSByte = Vector128.Create((byte)((byte)'9' + 1)).AsSByte();
+
     private readonly Dictionary<int, Block> _blocks = new();
     private readonly SpanParser _spanParser = new();
 
