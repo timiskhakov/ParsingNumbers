@@ -20,7 +20,6 @@ public class SimdParser
     private static readonly Vector128<sbyte> AfterNinesAsSByte = Vector128.Create((byte)((byte)'9' + 1)).AsSByte();
 
     private readonly Dictionary<int, Block> _blocks = new();
-    private readonly SpanParser _spanParser = new();
 
     public SimdParser()
     {
@@ -54,8 +53,15 @@ public class SimdParser
             }
         }
 
-        var spanParsed = _spanParser.Parse(value[processed..]);
-        spanParsed.CopyTo(result, amount);
+        for (var i = amount; i < result.Length - 1; i++)
+        {
+            var end = processed;
+            while (value[end] != ',') end++;
+            result[i] = uint.Parse(value.AsSpan(processed, end - processed));
+            processed = end + 1;
+        }
+
+        result[^1] = uint.Parse(value.AsSpan(processed));
 
         return result;
     }

@@ -57,7 +57,7 @@ public class SimdParserTests
     }
 
     [Fact]
-    public void Parse_NineDigitsNumbers()
+    public void Parse_9DigitNumbers()
     {
         var parser = new SimdParser();
 
@@ -67,7 +67,7 @@ public class SimdParserTests
     }
 
     [Fact]
-    public void Parse_TenDigitsNumbers()
+    public void Parse_10DigitNumbers()
     {
         var parser = new SimdParser();
 
