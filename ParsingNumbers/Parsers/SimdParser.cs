@@ -76,7 +76,7 @@ public class SimdParser
         var block = _blocks[moveMask];
         var shuffled = Ssse3.Shuffle(input, block.Mask);
 
-        switch(block.NumberSize)
+        switch (block.NumberSize)
         {
             case 1:
                 ParseOneDigitNumbers(shuffled, block.Amount, output);

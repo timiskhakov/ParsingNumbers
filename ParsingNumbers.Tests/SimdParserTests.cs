@@ -1,110 +1,81 @@
 ﻿using ParsingNumbers.Parsers;
-using System.Text;
 using Xunit;
 
 namespace ParsingNumbers.Tests;
 
 public class SimdParserTests
 {
+    private readonly SimdParser _parser = new();
+
     [Fact]
     public void Parse_1DigitNumbers()
     {
-        var parser = new SimdParser();
-
-        var result = parser.Parse("1,2,3,4,5,6,7,8,9");
-
-        Assert.Equal(new uint[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, result);
+        Assert.Equal(Data.Expected1DigitNumbers, _parser.Parse(Data.Input1DigitNumbers));
     }
 
     [Fact]
     public void Parse_2DigitNumbers()
     {
-        var parser = new SimdParser();
+        Assert.Equal(Data.Expected2DigitNumbers, _parser.Parse(Data.Input2DigitNumbers));
+    }
 
-        var result = parser.Parse("12,34,56,78,90,10");
-
-        Assert.Equal(new uint[] { 12, 34, 56, 78, 90, 10 }, result);
+    [Fact]
+    public void Parse_3DigitNumbers()
+    {
+        Assert.Equal(Data.Expected3DigitNumbers, _parser.Parse(Data.Input3DigitNumbers));
     }
 
     [Fact]
     public void Parse_4DigitNumbers()
     {
-        var parser = new SimdParser();
+        Assert.Equal(Data.Expected4DigitNumbers, _parser.Parse(Data.Input4DigitNumbers));
+    }
 
-        var result = parser.Parse("1234,5678,9010,1230");
+    [Fact]
+    public void Parse_5DigitNumbers()
+    {
+        Assert.Equal(Data.Expected5DigitNumbers, _parser.Parse(Data.Input5DigitNumbers));
+    }
 
-        Assert.Equal(new uint[] { 1234, 5678, 9010, 1230 }, result);
+    [Fact]
+    public void Parse_6DigitNumbers()
+    {
+        Assert.Equal(Data.Expected6DigitNumbers, _parser.Parse(Data.Input6DigitNumbers));
+    }
+
+    [Fact]
+    public void Parse_7DigitNumbers()
+    {
+        Assert.Equal(Data.Expected7DigitNumbers, _parser.Parse(Data.Input7DigitNumbers));
     }
 
     [Fact]
     public void Parse_8DigitNumbers()
     {
-        var parser = new SimdParser();
-
-        var result = parser.Parse("12345678,90101230,12345678,90101230");
-
-        Assert.Equal(new uint[] { 12345678, 90101230, 12345678, 90101230 }, result);
-    }
-
-    [Fact]
-    public void Parse_LongInput()
-    {
-        var parser = new SimdParser();
-
-        var actual = parser.Parse(Data.LongInput);
-
-        Assert.Equal(Data.LongExpected, actual);
+        Assert.Equal(Data.Expected8DigitNumbers, _parser.Parse(Data.Input8DigitNumbers));
     }
 
     [Fact]
     public void Parse_9DigitNumbers()
     {
-        var parser = new SimdParser();
-
-        var actual = parser.Parse("123456789,123456789");
-
-        Assert.Equal(new uint[] { 123456789, 123456789 }, actual);
+        Assert.Equal(Data.Expected9DigitNumbers, _parser.Parse(Data.Input9DigitNumbers));
     }
 
     [Fact]
     public void Parse_10DigitNumbers()
     {
-        var parser = new SimdParser();
-
-        var actual = parser.Parse("1234567890,1234567890");
-
-        Assert.Equal(new uint[] { 1234567890, 1234567890 }, actual);
+        Assert.Equal(Data.Expected10DigitNumbers, _parser.Parse(Data.Input10DigitNumbers));
     }
 
     [Fact]
-    public void Parse_ManyNumbers()
+    public void Parse_FewVariousNumbers()
     {
-        var parser = new SimdParser();
-
-        var actual = parser.Parse(CreateInput(1000000));
-
-        Assert.Equal(CreateExpected(1000000), actual);
+        Assert.Equal(Data.ExpectedVariousNumbers, _parser.Parse(Data.InputVariousNumbers));
     }
 
-    private static string CreateInput(int n)
+    [Fact]
+    public void Parse_MillionVariousNumbers()
     {
-        var sb = new StringBuilder();
-        for (var i = 0; i < n; i++)
-        {
-            sb.Append(i).Append(',');
-        }
-
-        return sb.ToString(0, sb.Length - 1);
-    }
-
-    private static uint[] CreateExpected(int n)
-    {
-        var result = new uint[n];
-        for (uint i = 0; i < n; i++)
-        {
-            result[i] = i;
-        }
-
-        return result;
+        Assert.Equal(Data.CreateExpected(1_000_000), _parser.Parse(Data.CreateInput(1_000_000)));
     }
 }
