@@ -8,13 +8,13 @@ public class SpanParser
     {
         if (string.IsNullOrEmpty(value)) return Array.Empty<uint>();
 
-        var commaCount = 0;
+        var commas = 0;
         foreach (var v in value)
         {
-            if (v == ',') commaCount++;
+            if (v == ',') commas++;
         }
 
-        var result = new uint[commaCount + 1];
+        var result = new uint[commas + 1];
         var start = 0;
         for (var i = 0; i < result.Length - 1; i++)
         {
