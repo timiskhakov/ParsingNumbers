@@ -2,7 +2,7 @@
 
 namespace ParsingNumbers.Parsers;
 
-public class SpanParser
+public class OptimizedParser
 {
     public uint[] Parse(string value)
     {

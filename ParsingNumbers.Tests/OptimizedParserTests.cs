@@ -3,9 +3,9 @@ using Xunit;
 
 namespace ParsingNumbers.Tests;
 
-public class SpanParserTests
+public class OptimizedParserTests
 {
-    private readonly SpanParser _parser = new();
+    private readonly OptimizedParser _parser = new();
 
     [Fact]
     public void Parse_1DigitNumbers()

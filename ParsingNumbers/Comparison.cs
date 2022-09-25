@@ -9,7 +9,7 @@ namespace ParsingNumbers;
 public class Comparison
 {
     private NaiveParser _naiveParser = null!;
-    private SpanParser _spanParser = null!;
+    private OptimizedParser _optimizedParser = null!;
     private SimdParser _simdParser = null!;
 
     public static IEnumerable<string> Inputs() => new[]
@@ -36,7 +36,7 @@ public class Comparison
     public void Setup()
     {
         _naiveParser = new NaiveParser();
-        _spanParser = new SpanParser();
+        _optimizedParser = new OptimizedParser();
         _simdParser = new SimdParser();
     }
 
@@ -49,9 +49,9 @@ public class Comparison
 
     [Benchmark]
     [ArgumentsSource(nameof(Inputs))]
-    public void Span(string value)
+    public void Optimized(string value)
     {
-        _spanParser.Parse(value);
+        _optimizedParser.Parse(value);
     }
 
     [Benchmark]
