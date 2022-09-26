@@ -19,13 +19,13 @@ public class SimdParser
     private static readonly Vector128<sbyte> ZerosAsSByte = Vector128.Create((byte)'0').AsSByte();
     private static readonly Vector128<sbyte> AfterNinesAsSByte = Vector128.Create((byte)((byte)'9' + 1)).AsSByte();
 
-    private readonly Dictionary<int, Block> _blocks = new();
+    private readonly Dictionary<int, Pattern> _patterns = new();
 
     public SimdParser()
     {
         for (ushort i = 0; i < ushort.MaxValue; i++)
         {
-            _blocks.Add(i, new Block(i));
+            _patterns.Add(i, new Pattern(i));
         }
     }
 
@@ -73,22 +73,22 @@ public class SimdParser
         var t1 = Sse2.CompareLessThan(input.AsSByte(), AfterNinesAsSByte);
         var andNot = Sse2.AndNot(t0, t1);
         var moveMask = Sse2.MoveMask(andNot);
-        var block = _blocks[moveMask];
-        var shuffled = Ssse3.Shuffle(input, block.Mask);
+        var pattern = _patterns[moveMask];
+        var shuffled = Ssse3.Shuffle(input, pattern.Mask);
 
-        switch (block.NumberSize)
+        switch (pattern.NumberSize)
         {
             case 1:
-                ParseOneDigitNumbers(shuffled, block.Amount, output);
+                Parse1DigitNumbers(shuffled, pattern.Amount, output);
                 break;
             case 2:
-                ParseTwoDigitNumbers(shuffled, block.Amount, output);
+                Parse2DigitNumbers(shuffled, pattern.Amount, output);
                 break;
             case 4:
-                ParseFourDigitNumbers(shuffled, block.Amount, output);
+                Parse4DigitNumbers(shuffled, pattern.Amount, output);
                 break;
             case 8:
-                ParseEightDigitNumbers(shuffled, block.Amount, output);
+                Parse8DigitNumbers(shuffled, pattern.Amount, output);
                 break;
             case 16:
                 ParseSingeNumber(shuffled, output);
@@ -97,11 +97,11 @@ public class SimdParser
                 throw new ArgumentOutOfRangeException();
         }
 
-        return (block.Processed, block.Amount);
+        return (pattern.Processed, pattern.Amount);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ParseOneDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
+    private static void Parse1DigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
         for (var i = 0; i < amount; i++)
@@ -111,7 +111,7 @@ public class SimdParser
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ParseTwoDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
+    private static void Parse2DigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
         var t1 = Ssse3.MultiplyAddAdjacent(t0, Mul10);
@@ -122,7 +122,7 @@ public class SimdParser
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ParseFourDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
+    private static void Parse4DigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
         var t1 = Ssse3.MultiplyAddAdjacent(t0, Mul10);
@@ -134,7 +134,7 @@ public class SimdParser
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ParseEightDigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
+    private static void Parse8DigitNumbers(Vector128<byte> vector, int amount, Span<uint> output)
     {
         var t0 = Sse2.SubtractSaturate(vector, Zeros);
         var t1 = Ssse3.MultiplyAddAdjacent(t0, Mul10);
