@@ -13,16 +13,17 @@ public class Pattern
     public int NumberSize { get; }
     public int Amount { get; }
     public int Processed { get; }
+    public byte[] Array { get; }
     public Vector128<byte> Mask { get; }
 
     public Pattern(ushort value)
     {
-        var (spans, processed) = FindSpans(value);
-        if (spans.Count == 0) return;
+        if (value == 0) return;
 
-        NumberSize = CalculateSize(spans);
+        var spans = FindSpans(value).ToList();
+        NumberSize = CalculateNumberSize(spans);
         Amount = spans.Count;
-        Processed = processed;
+        Processed = CalculateProcessed(value, spans.Last());
 
         var bytes = new byte[InputSize];
         for (var i = 0; i < spans.Count; i++)
@@ -31,6 +32,8 @@ public class Pattern
             padded.CopyTo(bytes, i * NumberSize);
         }
 
+        Array = bytes;
+
         Mask = Vector128.Create(
             bytes[0], bytes[1], bytes[2], bytes[3],
             bytes[4], bytes[5], bytes[6], bytes[7],
@@ -38,13 +41,11 @@ public class Pattern
             bytes[12], bytes[13], bytes[14], bytes[15]);
     }
 
-    private static (List<Span>, int) FindSpans(ushort value)
+    private static IEnumerable<Span> FindSpans(ushort value)
     {
         var bits = new BitArray(BitConverter.GetBytes(value)).Cast<bool>().ToArray();
 
-        var spans = new List<Span>();
         byte start = 0;
-        var processed = 0;
         for (byte i = 0; i < bits.Length; i++)
         {
             if (i == 0)
@@ -61,16 +62,12 @@ public class Pattern
 
             if (!bits[i] && bits[i - 1])
             {
-                spans.Add(new Span(start, i - start));
+                yield return new Span(start, i - start);
             }
-
-            if (!bits[i]) processed = i + 1;
         }
-
-        return (spans, processed);
     }
 
-    private static int CalculateSize(IList<Span> spans)
+    private static int CalculateNumberSize(IList<Span> spans)
     {
         var maxLength = spans.Aggregate((x, y) => x.Length > y.Length ? x : y).Length;
         var numberSize = FindNextPowerOfTwo(maxLength);
@@ -97,6 +94,17 @@ public class Pattern
         return v;
     }
 
+    private static int CalculateProcessed(ushort value, Span lastSpan)
+    {
+        var bits = new BitArray(BitConverter.GetBytes(value)).Cast<bool>().ToArray();
+        for (var i = lastSpan.Start + lastSpan.Length; i < bits.Length; i++)
+        {
+            if (bits[i]) return i;
+        }
+
+        return bits.Length;
+    }
+    
     private byte[] Pad(Span span)
     {
         var result = new byte[NumberSize];
