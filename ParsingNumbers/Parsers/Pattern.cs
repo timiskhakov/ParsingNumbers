@@ -13,7 +13,6 @@ public class Pattern
     public int NumberSize { get; }
     public int Amount { get; }
     public int Processed { get; }
-    public byte[] Array { get; }
     public Vector128<byte> Mask { get; }
 
     public Pattern(ushort value)
@@ -21,6 +20,8 @@ public class Pattern
         if (value == 0) return;
 
         var spans = FindSpans(value).ToList();
+        if (!spans.Any()) return;
+
         NumberSize = CalculateNumberSize(spans);
         Amount = spans.Count;
         Processed = CalculateProcessed(value, spans.Last());
@@ -31,8 +32,6 @@ public class Pattern
             var padded = Pad(spans[i]);
             padded.CopyTo(bytes, i * NumberSize);
         }
-
-        Array = bytes;
 
         Mask = Vector128.Create(
             bytes[0], bytes[1], bytes[2], bytes[3],

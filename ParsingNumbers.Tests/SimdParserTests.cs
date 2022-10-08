@@ -68,7 +68,13 @@ public class SimdParserTests
     }
 
     [Fact]
-    public void Parse_FewVariousNumbers()
+    public void Parse_FewNumbers()
+    {
+        Assert.Equal(Data.ExpectedFewNumbers, _parser.Parse(Data.InputFewNumbers));
+    }
+
+    [Fact]
+    public void Parse_VariousNumbers()
     {
         Assert.Equal(Data.ExpectedVariousNumbers, _parser.Parse(Data.InputVariousNumbers));
     }

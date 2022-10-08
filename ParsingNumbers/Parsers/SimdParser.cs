@@ -94,7 +94,7 @@ public class SimdParser
                 ParseSingeNumber(shuffled, output);
                 break;
             default:
-                throw new ArgumentOutOfRangeException();
+                throw new InvalidOperationException();
         }
 
         return (pattern.Processed, pattern.Amount);
