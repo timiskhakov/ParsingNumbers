@@ -17,7 +17,7 @@ public class SimdParser
     private static readonly Vector128<short> Mul100 = Vector128.Create(100, 1, 100, 1, 100, 1, 100, 1);
     private static readonly Vector128<short> Mul10000 = Vector128.Create(10000, 1, 10000, 1, 10000, 1, 10000, 1);
     private static readonly Vector128<sbyte> ZerosAsSByte = Vector128.Create((byte)'0').AsSByte();
-    private static readonly Vector128<sbyte> AfterNinesAsSByte = Vector128.Create((byte)((byte)'9' + 1)).AsSByte();
+    private static readonly Vector128<sbyte> ColonsAsSByte = Vector128.Create((byte)':').AsSByte();
 
     private readonly Dictionary<int, Pattern> _patterns = new();
 
@@ -70,7 +70,7 @@ public class SimdParser
     private (int, int) ParseVector(Vector128<byte> input, Span<uint> output)
     {
         var t0 = Sse2.CompareLessThan(input.AsSByte(), ZerosAsSByte);
-        var t1 = Sse2.CompareLessThan(input.AsSByte(), AfterNinesAsSByte);
+        var t1 = Sse2.CompareLessThan(input.AsSByte(), ColonsAsSByte);
         var andNot = Sse2.AndNot(t0, t1);
         var moveMask = Sse2.MoveMask(andNot);
         var pattern = _patterns[moveMask];
