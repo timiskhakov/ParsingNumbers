@@ -66,6 +66,12 @@ public class NaiveParserTests
     {
         Assert.Equal(Data.Expected10DigitNumbers, _parser.Parse(Data.Input10DigitNumbers));
     }
+    
+    [Fact]
+    public void Parse_FewNumbers()
+    {
+        Assert.Equal(Data.ExpectedFewNumbers, _parser.Parse(Data.InputFewNumbers));
+    }
 
     [Fact]
     public void Parse_FewVariousNumbers()

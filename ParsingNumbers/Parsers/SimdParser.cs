@@ -19,13 +19,13 @@ public class SimdParser
     private static readonly Vector128<sbyte> ZerosAsSByte = Vector128.Create((byte)'0').AsSByte();
     private static readonly Vector128<sbyte> ColonsAsSByte = Vector128.Create((byte)':').AsSByte();
 
-    private readonly Dictionary<int, Pattern> _patterns = new();
+    private readonly Dictionary<int, Block> _blocks = new();
 
     public SimdParser()
     {
         for (ushort i = 0; i < ushort.MaxValue; i++)
         {
-            _patterns.Add(i, new Pattern(i));
+            _blocks.Add(i, new Block(i));
         }
     }
 
@@ -71,24 +71,24 @@ public class SimdParser
     {
         var t0 = Sse2.CompareLessThan(input.AsSByte(), ZerosAsSByte);
         var t1 = Sse2.CompareLessThan(input.AsSByte(), ColonsAsSByte);
-        var andNot = Sse2.AndNot(t0, t1);
-        var moveMask = Sse2.MoveMask(andNot);
-        var pattern = _patterns[moveMask];
-        var shuffled = Ssse3.Shuffle(input, pattern.Mask);
+        var pattern = Sse2.AndNot(t0, t1);
+        var mask = Sse2.MoveMask(pattern);
+        var block = _blocks[mask];
+        var shuffled = Ssse3.Shuffle(input, block.Mask);
 
-        switch (pattern.NumberSize)
+        switch (block.NumberSize)
         {
             case 1:
-                Parse1DigitNumbers(shuffled, pattern.Amount, output);
+                Parse1DigitNumbers(shuffled, block.Amount, output);
                 break;
             case 2:
-                Parse2DigitNumbers(shuffled, pattern.Amount, output);
+                Parse2DigitNumbers(shuffled, block.Amount, output);
                 break;
             case 4:
-                Parse4DigitNumbers(shuffled, pattern.Amount, output);
+                Parse4DigitNumbers(shuffled, block.Amount, output);
                 break;
             case 8:
-                Parse8DigitNumbers(shuffled, pattern.Amount, output);
+                Parse8DigitNumbers(shuffled, block.Amount, output);
                 break;
             case 16:
                 ParseSingeNumber(shuffled, output);
@@ -97,7 +97,7 @@ public class SimdParser
                 throw new InvalidOperationException();
         }
 
-        return (pattern.Processed, pattern.Amount);
+        return (block.Processed, block.Amount);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
