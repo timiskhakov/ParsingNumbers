@@ -41,8 +41,8 @@ public class SimdParser
             Span<uint> output = stackalloc uint[8];
             while (processed <= value.Length - 16)
             {
-                var input = LoadInput(c + processed);
-                var (p, a) = ParseChunk(input, output);
+                var vector = LoadInput(c + processed);
+                var (p, a) = ParseVector(vector, output);
                 for (var i = 0; i < a; i++)
                 {
                     result[amount + i] = output[i];
@@ -67,7 +67,7 @@ public class SimdParser
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private (int, int) ParseChunk(Vector128<byte> input, Span<uint> output)
+    private (int, int) ParseVector(Vector128<byte> input, Span<uint> output)
     {
         var t0 = Sse2.CompareLessThan(input.AsSByte(), ZerosAsSByte);
         var t1 = Sse2.CompareLessThan(input.AsSByte(), AfterNinesAsSByte);
@@ -168,6 +168,7 @@ public class SimdParser
         var raw = Avx.LoadDquVector256((ushort*)c).AsByte();
         var lower = Ssse3.Shuffle(raw.GetLower(), RawMask);
         var upper = Ssse3.Shuffle(raw.GetUpper(), RawMask);
+        
         return Vector128.Create(lower.GetLower(), upper.GetLower());
     }
 
@@ -179,8 +180,8 @@ public class SimdParser
         {
             for (; i < value.Length - Vector256<ushort>.Count; i += Vector256<ushort>.Count)
             {
-                var input = LoadInput(c + i);
-                var match = Sse2.CompareEqual(Commas, input);
+                var vector = LoadInput(c + i);
+                var match = Sse2.CompareEqual(Commas, vector);
                 var mask = Sse2.MoveMask(match);
                 result += Popcnt.PopCount((uint)mask);
             }
