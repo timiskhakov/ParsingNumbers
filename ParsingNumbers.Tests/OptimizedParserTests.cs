@@ -68,15 +68,21 @@ public class OptimizedParserTests
     }
     
     [Fact]
-    public void Parse_FewNumbers()
+    public void InputVariousNumbers1()
     {
-        Assert.Equal(Data.ExpectedFewNumbers, _parser.Parse(Data.InputFewNumbers));
+        Assert.Equal(Data.ExpectedVariousNumbers1, _parser.Parse(Data.InputVariousNumbers1));
     }
 
     [Fact]
-    public void Parse_FewVariousNumbers()
+    public void InputVariousNumbers2()
     {
-        Assert.Equal(Data.ExpectedVariousNumbers, _parser.Parse(Data.InputVariousNumbers));
+        Assert.Equal(Data.ExpectedVariousNumbers2, _parser.Parse(Data.InputVariousNumbers2));
+    }
+
+    [Fact]
+    public void Parse_ManyNumbers()
+    {
+        Assert.Equal(Data.ExpectedManyNumbers, _parser.Parse(Data.InputManyNumbers));
     }
 
     [Fact]
