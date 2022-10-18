@@ -34,11 +34,14 @@ internal static class Data
     internal const string Input10DigitNumbers = "1234567890,1234567890";
     internal static readonly uint[] Expected10DigitNumbers = { 1234567890, 1234567890 };
 
-    internal const string InputFewNumbers = "1,2,3,4,123456,1";
-    internal static readonly uint[] ExpectedFewNumbers = { 1, 2, 3, 4, 123456, 1 };
+    internal const string InputVariousNumbers1 = "1,2,3,4,123456,1";
+    internal static readonly uint[] ExpectedVariousNumbers1 = { 1, 2, 3, 4, 123456, 1 };
 
-    internal const string InputVariousNumbers = "123,124,12,252,523,412,431,5,4263,51,412,423,6346,51,412,4313,5246,2651,3412,4,12345678";
-    internal static readonly uint[] ExpectedVariousNumbers = { 123, 124, 12, 252, 523, 412, 431, 5, 4263, 51, 412, 423, 6346, 51, 412, 4313, 5246, 2651, 3412, 4, 12345678 };
+    internal const string InputVariousNumbers2 = "213141241,12,636,123,35,123,213141241,856,123";
+    internal static readonly uint[] ExpectedVariousNumbers2 = { 213141241, 12, 636, 123, 35, 123, 213141241, 856, 123 };
+
+    internal const string InputManyNumbers = "123,124,12,252,523,412,431,5,4263,51,412,423,6346,51,412,4313,5246,2651,3412,4,12345678";
+    internal static readonly uint[] ExpectedManyNumbers = { 123, 124, 12, 252, 523, 412, 431, 5, 4263, 51, 412, 423, 6346, 51, 412, 4313, 5246, 2651, 3412, 4, 12345678 };
 
     internal static string CreateInput(int n)
     {
