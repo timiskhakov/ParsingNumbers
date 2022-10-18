@@ -8,7 +8,7 @@ namespace ParsingNumbers.Parsers;
 
 public class Block
 {
-    private const int Size = 16;
+    private const int VectorSize = 16;
 
     public int NumberSize { get; }
     public int Amount { get; }
@@ -26,7 +26,7 @@ public class Block
         Amount = spans.Count;
         Processed = CalculateProcessed(value, spans.Last());
 
-        var bytes = new byte[Size];
+        var bytes = new byte[VectorSize];
         for (var i = 0; i < spans.Count; i++)
         {
             var padded = Pad(spans[i]);
@@ -70,7 +70,7 @@ public class Block
     {
         var maxLength = spans.Aggregate((x, y) => x.Length > y.Length ? x : y).Length;
         var numberSize = FindNextPowerOfTwo(maxLength);
-        while (numberSize * spans.Count > Size)
+        while (numberSize * spans.Count > VectorSize)
         {
             spans.RemoveAt(spans.Count - 1);
             maxLength = spans.Aggregate((x, y) => x.Length > y.Length ? x : y).Length;
